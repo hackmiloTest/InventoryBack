@@ -218,10 +218,8 @@ public class ProductServiceImpl implements ProductService {
             String categoryName = product.getCategory().getName();
             productsByCategory.put(categoryName, productsByCategory.getOrDefault(categoryName, 0L) + 1);
 
-            // Contar productos con stock > 0
-            if (product.getStockQuantity() > 0) {
-                availableStockCount++;
-            }
+            // Sumar el stock disponible total
+            availableStockCount += product.getStockQuantity();
         }
 
         ProductSummaryDTO summary = ProductSummaryDTO.builder()
@@ -232,9 +230,10 @@ public class ProductServiceImpl implements ProductService {
         return Response.builder()
                 .status(200)
                 .message("Resumen de productos obtenido correctamente")
-                .summary(summary) // <-- necesitas agregar esta propiedad al Response DTO si no está
+                .summary(summary)
                 .build();
     }
+
 
 
     private String getCellValue(Cell cell) {
