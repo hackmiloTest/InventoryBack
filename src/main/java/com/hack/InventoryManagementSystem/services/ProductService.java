@@ -16,4 +16,5 @@ public interface ProductService {
     Response deleteProduct(Long id);
 
     Response bulkSaveProducts(MultipartFile file);
+    Response getTotalProducts();
 }

@@ -37,6 +37,7 @@ public class Response {
 
     private TransactionDTO transaction;
     private List<TransactionDTO> transactions;
+    private ProductSummaryDTO summary;
 
     private final LocalDateTime timestamp = LocalDateTime.now();
 }

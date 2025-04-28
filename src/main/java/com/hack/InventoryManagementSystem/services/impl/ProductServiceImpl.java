@@ -1,6 +1,7 @@
 package com.hack.InventoryManagementSystem.services.impl;
 
 import com.hack.InventoryManagementSystem.dto.ProductDTO;
+import com.hack.InventoryManagementSystem.dto.ProductSummaryDTO;
 import com.hack.InventoryManagementSystem.dto.Response;
 import com.hack.InventoryManagementSystem.entity.Category;
 import com.hack.InventoryManagementSystem.entity.Product;
@@ -23,9 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -207,6 +206,36 @@ public class ProductServiceImpl implements ProductService {
         return Response.builder().status(errors.isEmpty() ? 200 : 207) // 207 Multi-Status si hay errores
                 .message(successCount + " productos creados exitosamente").build();
     }
+
+    @Override
+    public Response getTotalProducts() {
+        List<Product> allProducts = productRepository.findAll();
+        Map<String, Long> productsByCategory = new HashMap<>();
+        long availableStockCount = 0;
+
+        for (Product product : allProducts) {
+            // Contar productos por categoría
+            String categoryName = product.getCategory().getName();
+            productsByCategory.put(categoryName, productsByCategory.getOrDefault(categoryName, 0L) + 1);
+
+            // Contar productos con stock > 0
+            if (product.getStockQuantity() > 0) {
+                availableStockCount++;
+            }
+        }
+
+        ProductSummaryDTO summary = ProductSummaryDTO.builder()
+                .totalProductsByCategory(productsByCategory)
+                .totalAvailableStock(availableStockCount)
+                .build();
+
+        return Response.builder()
+                .status(200)
+                .message("Resumen de productos obtenido correctamente")
+                .summary(summary) // <-- necesitas agregar esta propiedad al Response DTO si no está
+                .build();
+    }
+
 
     private String getCellValue(Cell cell) {
         if (cell == null) {

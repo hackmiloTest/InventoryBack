@@ -70,4 +70,9 @@ public class ProductController {
         return ResponseEntity.ok(productService.bulkSaveProducts(file));
     }
 
+    @GetMapping("/totalProducts")
+    public ResponseEntity<Response> getTotalProducts() {
+        return ResponseEntity.ok(productService.getTotalProducts());
+    }
+
 }
