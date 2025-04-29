@@ -143,24 +143,17 @@ public class ProductServiceImpl implements ProductService {
         int successCount = 0;
 
         try {
-            // Leer el archivo Excel
             Workbook workbook = new XSSFWorkbook(file.getInputStream());
-            Sheet sheet = workbook.getSheetAt(0); // Suponemos que los datos están en la primera hoja
+            Sheet sheet = workbook.getSheetAt(0);
 
-            // Iterar sobre las filas del Excel (empezando desde la fila 1 para omitir los encabezados)
             for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
                 Row row = sheet.getRow(i);
-                System.out.println("Procesando fila " + (i + 1) + ": " + row); // Debug
                 try {
-                    // Asegurarse de que la fila no esté vacía
-                    if (row == null) {
-                        System.out.println("Fila " + (i + 1) + " está vacía");
-                        continue;
-                    }
+                    if (row == null) continue;
 
                     ProductDTO dto = new ProductDTO();
                     dto.setName(getCellValue(row.getCell(0)));
-                    dto.setSku((getCellValue(row.getCell(1))));
+                    dto.setSku(getCellValue(row.getCell(1)));
                     dto.setPrice(new BigDecimal(getCellValue(row.getCell(2))));
                     dto.setStockQuantity((int) Double.parseDouble(getCellValue(row.getCell(3))));
                     dto.setDescription(getCellValue(row.getCell(4)));
@@ -168,29 +161,33 @@ public class ProductServiceImpl implements ProductService {
                     dto.setCategoryId((long) Double.parseDouble(categoryIdStr));
 
                     // Validaciones básicas
-                    if (dto.getName() == null || dto.getName().isBlank()) {
-                        throw new IllegalArgumentException("El nombre es requerido");
+                    if (dto.getName() == null || dto.getName().isBlank()) throw new IllegalArgumentException("El nombre es requerido");
+                    if (dto.getSku() == null || dto.getSku().isBlank()) throw new IllegalArgumentException("El SKU es requerido");
+
+                    Category category = categoryRepository.findById(dto.getCategoryId())
+                            .orElseThrow(() -> new NotFoundException("Categoría no encontrada para el producto: " + dto.getName()));
+
+                    Optional<Product> existingProductOpt = productRepository.findBySku(dto.getSku());
+
+                    if (existingProductOpt.isPresent()) {
+                        // Actualizar producto existente
+                        Product existingProduct = existingProductOpt.get();
+                        existingProduct.setName(dto.getName());
+                        existingProduct.setPrice(dto.getPrice());
+                        existingProduct.setStockQuantity(existingProduct.getStockQuantity() + dto.getStockQuantity());
+                        existingProduct.setDescription(dto.getDescription());
+                        existingProduct.setCategory(category);
+                        productsToSave.add(existingProduct);
+                    } else {
+                        // Crear nuevo producto
+                        Product product = modelMapper.map(dto, Product.class);
+                        product.setCategory(category); // setear categoría manualmente
+                        productsToSave.add(product);
                     }
 
-                    if (dto.getSku() == null || dto.getSku().isBlank()) {
-                        throw new IllegalArgumentException("El SKU es requerido");
-                    }
-
-                    Category category = categoryRepository.findById(dto.getCategoryId()).orElseThrow(() -> new NotFoundException("Categoría no encontrada para el producto: " + dto.getName()));
-
-                    // En tu servicio (antes del mapeo):
-                    modelMapper.getConfiguration().setAmbiguityIgnored(true); // Opcional: ignora conflictos
-                    modelMapper.typeMap(ProductDTO.class, Product.class).addMappings(mapper -> {
-                        mapper.<Long>map(ProductDTO::getCategoryId, (dest, v) -> dest.getCategory().setId(v));
-                    });
-
-// Luego usa el mapeo normal:
-                    Product product = modelMapper.map(dto, Product.class);
-
-                    productsToSave.add(product);
                     successCount++;
+
                 } catch (Exception e) {
-                    System.out.println("Error en fila " + (i + 1) + ": " + e.getMessage());
                     errors.add("Error en línea " + (i + 1) + ": " + e.getMessage());
                 }
             }
@@ -203,9 +200,12 @@ public class ProductServiceImpl implements ProductService {
             errors.add("Error al procesar el archivo: " + e.getMessage());
         }
 
-        return Response.builder().status(errors.isEmpty() ? 200 : 207) // 207 Multi-Status si hay errores
-                .message(successCount + " productos creados exitosamente").build();
+        return Response.builder()
+                .status(errors.isEmpty() ? 200 : 207)
+                .message(successCount + " productos procesados exitosamente" + (errors.isEmpty() ? "" : ". Algunos productos fallaron."))
+                .build();
     }
+
 
     @Override
     public Response getTotalProducts() {
