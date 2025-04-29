@@ -56,6 +56,7 @@ public class ProductController {
     @PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('MANAGER')")
     public ResponseEntity<Response> updateProduct(
+            @RequestParam("id") Long id,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             @RequestParam("name") String name,
             @RequestParam("sku") String sku,
@@ -65,6 +66,7 @@ public class ProductController {
             @RequestParam(value = "description", required = false) String description
     ) {
         ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(id);
         productDTO.setName(name);
         productDTO.setSku(sku);
         productDTO.setPrice(price);
