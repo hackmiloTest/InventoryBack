@@ -53,11 +53,27 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
-    @PutMapping("/update")
+    @PutMapping(value = "/update", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('MANAGER')")
-    public ResponseEntity<Response> updateProduct(@RequestBody @Valid ProductDTO productDTO) {
+    public ResponseEntity<Response> updateProduct(
+            @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam("name") String name,
+            @RequestParam("sku") String sku,
+            @RequestParam("price") BigDecimal price,
+            @RequestParam("stockQuantity") Integer stockQuantity,
+            @RequestParam("categoryId") Long categoryId,
+            @RequestParam(value = "description", required = false) String description
+    ) {
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setName(name);
+        productDTO.setSku(sku);
+        productDTO.setPrice(price);
+        productDTO.setStockQuantity(stockQuantity);
+        productDTO.setCategoryId(categoryId);
+        productDTO.setDescription(description);
         return ResponseEntity.ok(productService.updateProduct(productDTO));
     }
+
 
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasAuthority('MANAGER')")
