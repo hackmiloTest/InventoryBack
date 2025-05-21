@@ -24,7 +24,6 @@ public class Transaction {
     private Long id;
 
     private Integer totalProducts;
-
     private BigDecimal totalPrice;
 
     @Enumerated(EnumType.STRING)
@@ -34,13 +33,11 @@ public class Transaction {
     private TransactionStatus status;
 
     private String description;
-
     private LocalDateTime updatedAt;
-
     private final LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "original_sale_id")
-    private Long originalSaleId; // 🆕
+    private Long originalSaleId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -53,19 +50,4 @@ public class Transaction {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "supplier_id")
     private Supplier supplier;
-
-    @Override
-    public String toString() {
-        return "Transaction{" +
-                "id=" + id +
-                ", totalProducts=" + totalProducts +
-                ", totalPrice=" + totalPrice +
-                ", transactionType=" + transactionType +
-                ", status=" + status +
-                ", description='" + description + '\'' +
-                ", updatedAt=" + updatedAt +
-                ", createdAt=" + createdAt +
-                ", originalSaleId=" + originalSaleId +
-                '}';
-    }
 }
