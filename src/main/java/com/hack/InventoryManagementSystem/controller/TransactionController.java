@@ -35,7 +35,7 @@ public class TransactionController {
     public ResponseEntity<Response> getAllTransactions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "1000") int size,
-            @RequestParam(required = false) String searchText
+            @RequestParam(required = false, defaultValue = "") String searchText
     ) {
         return ResponseEntity.ok(transactionService.getAllTransactions(page, size, searchText));
     }
