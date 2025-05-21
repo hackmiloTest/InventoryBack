@@ -152,9 +152,9 @@ public class TransactionServiceImpl implements TransactionService {
     public Response getAllTransactions(int page, int size, String searchText) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         Page<Transaction> transactionPage = transactionRepository.searchTransactions(searchText, pageable);
-        List<TransactionDTO> transactionDTOS =
-                modelMapper.map(transactionPage.getContent(), new TypeToken<List<TransactionDTO>>() {
-                }.getType());
+        List<TransactionDTO> transactionDTOS = transactionPage.getContent().stream()
+                .map(transaction -> modelMapper.map(transaction, TransactionDTO.class))
+                .toList();
         transactionDTOS.forEach(transactionDTOItem -> {
             transactionDTOItem.setUser(null);
             transactionDTOItem.setSupplier(null);
