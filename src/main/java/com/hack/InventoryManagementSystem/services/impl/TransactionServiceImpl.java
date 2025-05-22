@@ -1,9 +1,6 @@
 package com.hack.InventoryManagementSystem.services.impl;
 
-import com.hack.InventoryManagementSystem.dto.Response;
-import com.hack.InventoryManagementSystem.dto.TransactionDTO;
-import com.hack.InventoryManagementSystem.dto.TransactionsRequest;
-import com.hack.InventoryManagementSystem.dto.ProductDTO;
+import com.hack.InventoryManagementSystem.dto.*;
 import com.hack.InventoryManagementSystem.entity.Product;
 import com.hack.InventoryManagementSystem.entity.Supplier;
 import com.hack.InventoryManagementSystem.entity.Transaction;
@@ -24,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -209,15 +207,60 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Response getTransactionsById(Long id) {
-        Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Transaction Not found"));
+        // 1. Usamos JOIN FETCH para evitar problemas N+1 en una sola consulta
+        Transaction transaction = transactionRepository.findByIdWithDetails(id)
+                .orElseThrow(() -> new NotFoundException("Transacción no encontrada con ID: " + id));
 
-        TransactionDTO transactionDTO = modelMapper.map(transaction, TransactionDTO.class);
-        transactionDTO.getUser().setTransactions(null); // removing the user transaction list
+        // 2. Mapeo manual selectivo para evitar carga innecesaria
+        TransactionDTO transactionDTO = TransactionDTO.builder()
+                .id(transaction.getId())
+                .totalProducts(transaction.getTotalProducts())
+                .totalPrice(transaction.getTotalPrice())
+                .transactionType(transaction.getTransactionType())
+                .status(transaction.getStatus())
+                .description(transaction.getDescription())
+                .createdAt(transaction.getCreatedAt())
+                .updatedAt(transaction.getUpdatedAt())
+                .originalSaleId(transaction.getOriginalSaleId())
+                .product(mapToProductDTO(transaction.getProduct()))
+                .user(mapToUserDTO(transaction.getUser())) // Mapeo controlado del usuario
+                .supplier(transaction.getSupplier() != null ? mapToSupplierDTO(transaction.getSupplier()) : null)
+                .build();
+
         return Response.builder()
-                .status(200)
-                .message("Success")
+                .status(HttpStatus.OK.value())
+                .message("Datos de transacción obtenidos exitosamente")
                 .transaction(transactionDTO)
+                .build();
+    }
+
+    // Métodos auxiliares para mapeo controlado
+    private ProductDTO mapToProductDTO(Product product) {
+        if (product == null) return null;
+        return ProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .sku(product.getSku())
+                // Solo incluir campos necesarios
+                .build();
+    }
+
+    private UserDTO mapToUserDTO(User user) {
+        if (user == null) return null;
+        return UserDTO.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                // Excluir relaciones circulares
+                .build();
+    }
+
+    private SupplierDTO mapToSupplierDTO(Supplier supplier) {
+        if (supplier == null) return null;
+        return SupplierDTO.builder()
+                .id(supplier.getId())
+                .name(supplier.getName())
+                // Solo campos necesarios
                 .build();
     }
 

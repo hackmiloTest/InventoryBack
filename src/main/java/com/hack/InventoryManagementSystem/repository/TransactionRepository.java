@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
 
@@ -39,6 +40,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     Page<Transaction> searchTransactionsWithType(@Param("searchText") String searchText,
                                                  @Param("transactionType") TransactionType transactionType,
                                                  Pageable pageable);
+
+    @Query("SELECT t FROM Transaction t " +
+            "LEFT JOIN FETCH t.product " +
+            "LEFT JOIN FETCH t.user " +
+            "LEFT JOIN FETCH t.supplier " +
+            "WHERE t.id = :id")
+    Optional<Transaction> findByIdWithDetails(@Param("id") Long id);
 
 
 }
