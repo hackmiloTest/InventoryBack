@@ -17,14 +17,13 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findAllByMonthAndYear(@Param("month") int month, @Param("year") int year);
 
 
-    @Query("SELECT t FROM Transaction t " +
-            "LEFT JOIN FETCH t.product p " +  // JOIN FETCH para evitar N+1
-            "WHERE (:searchText = '' OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
+    @Query("SELECT t FROM Transaction t WHERE " +
+            "(:searchText = '' OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
             "AND (:transactionType IS NULL OR " +
-            "   (:#{#transactionType?.name()} = 'SALE_NO_RETURN' AND t.transactionType = 'SALE' AND NOT EXISTS (" +
+            "   (:transactionType = 'SALE_NO_RETURN' AND t.transactionType = 'SALE' AND NOT EXISTS (" +
             "       SELECT 1 FROM Transaction r WHERE r.originalSaleId = t.id AND r.transactionType = 'RETURN'" +
             "   )) OR " +
-            "   (:#{#transactionType?.name()} != 'SALE_NO_RETURN' AND t.transactionType = :transactionType)" +
+            "   (:transactionType != 'SALE_NO_RETURN' AND t.transactionType = :transactionType)" +
             ") " +
             "ORDER BY t.createdAt DESC")
     Page<Transaction> searchTransactions(
