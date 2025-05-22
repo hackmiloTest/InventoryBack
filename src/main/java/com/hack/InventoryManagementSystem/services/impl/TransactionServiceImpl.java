@@ -149,40 +149,29 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Response getAllTransactions(int page, int size, String searchText, TransactionType transactionType) {
-        Pageable pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));
+    public Response getAllTransactions(int page, int size, String searchText, String transactionTypeStr) {
+        // Convertir String a Enum de manera segura
+        TransactionType transactionType = null;
+        if (transactionTypeStr != null && !transactionTypeStr.isEmpty()) {
+            try {
+                transactionType = "SALE_NO_RETURN".equals(transactionTypeStr)
+                        ? TransactionType.SALE
+                        : TransactionType.valueOf(transactionTypeStr);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Tipo de transacción inválido: " + transactionTypeStr);
+            }
+        }
 
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<Transaction> transactionPage = transactionRepository.searchTransactions(
                 searchText,
-                transactionType,
+                transactionTypeStr,
                 pageable
         );
 
+        // Mapeo a DTO con control de nulos
         List<TransactionDTO> dtos = transactionPage.getContent().stream()
-                .map(t -> {
-                    TransactionDTO dto = TransactionDTO.builder()
-                            .id(t.getId())
-                            .totalProducts(t.getTotalProducts())
-                            .totalPrice(t.getTotalPrice())
-                            .transactionType(t.getTransactionType())
-                            .status(t.getStatus())
-                            .description(t.getDescription())
-                            .updatedAt(t.getUpdatedAt())
-                            .createdAt(t.getCreatedAt())
-                            .originalSaleId(t.getOriginalSaleId())
-                            .build();
-
-                    // Mapeo seguro del producto
-                    if(t.getProduct() != null) {
-                        dto.setProduct(ProductDTO.builder()
-                                .id(t.getProduct().getId())
-                                .name(t.getProduct().getName())
-                                // Añade otros campos del producto si son necesarios
-                                .build());
-                    }
-
-                    return dto;
-                })
+                .map(this::mapToTransactionDTO)
                 .toList();
 
         return Response.builder()
@@ -191,6 +180,30 @@ public class TransactionServiceImpl implements TransactionService {
                 .totalPages(transactionPage.getTotalPages())
                 .transactions(dtos)
                 .build();
+    }
+
+    private TransactionDTO mapToTransactionDTO(Transaction t) {
+        TransactionDTO dto = TransactionDTO.builder()
+                .id(t.getId())
+                .totalProducts(t.getTotalProducts())
+                .totalPrice(t.getTotalPrice())
+                .transactionType(t.getTransactionType())
+                .status(t.getStatus())
+                .description(t.getDescription())
+                .updatedAt(t.getUpdatedAt())
+                .createdAt(t.getCreatedAt())
+                .originalSaleId(t.getOriginalSaleId())
+                .build();
+
+        if (t.getProduct() != null) {
+            dto.setProduct(ProductDTO.builder()
+                    .id(t.getProduct().getId())
+                    .name(t.getProduct().getName())
+                    // Añade otros campos necesarios
+                    .build());
+        }
+
+        return dto;
     }
 
 
