@@ -35,7 +35,7 @@ public class TransactionController {
     @GetMapping("/all")
     public ResponseEntity<Response> getAllTransactions(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "1000") int size,
+            @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false, defaultValue = "") String searchText,
             @RequestParam(required = false) TransactionType transactionType
     ) {

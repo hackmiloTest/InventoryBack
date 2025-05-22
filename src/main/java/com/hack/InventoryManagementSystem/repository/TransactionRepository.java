@@ -17,15 +17,21 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findAllByMonthAndYear(@Param("month") int month, @Param("year") int year);
 
 
-    //we are searching these field; Transaction's description, note, status, Product's name, sku
     @Query("SELECT t FROM Transaction t " +
-            "LEFT JOIN t.product p " +
-            "WHERE (:searchText = '' OR :searchText IS NULL OR " +
-            "LOWER(t.description) LIKE LOWER(CONCAT('%', :searchText, '%')) OR " +
-            "LOWER(t.status) LIKE LOWER(CONCAT('%', :searchText, '%')) OR " +
-            "LOWER(p.name) LIKE LOWER(CONCAT('%', :searchText, '%')) OR " +
-            "LOWER(p.sku) LIKE LOWER(CONCAT('%', :searchText, '%')))")
-    Page<Transaction> searchTransactions(@Param("searchText") String searchText, Pageable pageable);
+            "LEFT JOIN FETCH t.product p " +  // JOIN FETCH para evitar N+1
+            "WHERE (:searchText = '' OR LOWER(t.description) LIKE LOWER(CONCAT('%', :searchText, '%')) " +
+            "AND (:transactionType IS NULL OR " +
+            "   (:#{#transactionType?.name()} = 'SALE_NO_RETURN' AND t.transactionType = 'SALE' AND NOT EXISTS (" +
+            "       SELECT 1 FROM Transaction r WHERE r.originalSaleId = t.id AND r.transactionType = 'RETURN'" +
+            "   )) OR " +
+            "   (:#{#transactionType?.name()} != 'SALE_NO_RETURN' AND t.transactionType = :transactionType)" +
+            ") " +
+            "ORDER BY t.createdAt DESC")
+    Page<Transaction> searchTransactions(
+            @Param("searchText") String searchText,
+            @Param("transactionType") TransactionType transactionType,
+            Pageable pageable);
+
 
     @Query("SELECT t FROM Transaction t WHERE " +
             "(LOWER(t.description) LIKE LOWER(CONCAT('%', :searchText, '%')) " +

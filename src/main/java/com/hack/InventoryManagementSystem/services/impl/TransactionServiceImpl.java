@@ -3,6 +3,7 @@ package com.hack.InventoryManagementSystem.services.impl;
 import com.hack.InventoryManagementSystem.dto.Response;
 import com.hack.InventoryManagementSystem.dto.TransactionDTO;
 import com.hack.InventoryManagementSystem.dto.TransactionsRequest;
+import com.hack.InventoryManagementSystem.dto.ProductDTO;
 import com.hack.InventoryManagementSystem.entity.Product;
 import com.hack.InventoryManagementSystem.entity.Supplier;
 import com.hack.InventoryManagementSystem.entity.Transaction;
@@ -19,7 +20,6 @@ import com.hack.InventoryManagementSystem.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeToken;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -150,14 +150,38 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public Response getAllTransactions(int page, int size, String searchText, TransactionType transactionType) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<Transaction> transactionPage = transactionRepository.searchTransactionsWithType(searchText, transactionType, pageable);
+        Pageable pageable = PageRequest.of(page, Math.min(size, 100), Sort.by(Sort.Direction.DESC, "createdAt"));
 
-        List<TransactionDTO> transactionDTOS = transactionPage.getContent().stream()
-                .map(transaction -> modelMapper.map(transaction, TransactionDTO.class))
-                .peek(dto -> {
-                    dto.setUser(null);
-                    dto.setSupplier(null);
+        Page<Transaction> transactionPage = transactionRepository.searchTransactions(
+                searchText,
+                transactionType,
+                pageable
+        );
+
+        List<TransactionDTO> dtos = transactionPage.getContent().stream()
+                .map(t -> {
+                    TransactionDTO dto = TransactionDTO.builder()
+                            .id(t.getId())
+                            .totalProducts(t.getTotalProducts())
+                            .totalPrice(t.getTotalPrice())
+                            .transactionType(t.getTransactionType())
+                            .status(t.getStatus())
+                            .description(t.getDescription())
+                            .updatedAt(t.getUpdatedAt())
+                            .createdAt(t.getCreatedAt())
+                            .originalSaleId(t.getOriginalSaleId())
+                            .build();
+
+                    // Mapeo seguro del producto
+                    if(t.getProduct() != null) {
+                        dto.setProduct(ProductDTO.builder()
+                                .id(t.getProduct().getId())
+                                .name(t.getProduct().getName())
+                                // Añade otros campos del producto si son necesarios
+                                .build());
+                    }
+
+                    return dto;
                 })
                 .toList();
 
@@ -165,9 +189,10 @@ public class TransactionServiceImpl implements TransactionService {
                 .status(200)
                 .message("Success")
                 .totalPages(transactionPage.getTotalPages())
-                .transactions(transactionDTOS)
+                .transactions(dtos)
                 .build();
     }
+
 
     @Override
     public Response getTransactionsById(Long id) {
