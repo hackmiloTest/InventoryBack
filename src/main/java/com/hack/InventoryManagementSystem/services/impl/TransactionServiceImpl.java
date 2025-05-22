@@ -149,19 +149,22 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public Response getAllTransactions(int page, int size, String searchText) {
+    public Response getAllTransactions(int page, int size, String searchText, String transactionType) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<Transaction> transactionPage = transactionRepository.searchTransactions(searchText, pageable);
+        Page<Transaction> transactionPage = transactionRepository.searchTransactionsWithType(searchText, transactionType, pageable);
+
         List<TransactionDTO> transactionDTOS = transactionPage.getContent().stream()
                 .map(transaction -> modelMapper.map(transaction, TransactionDTO.class))
+                .peek(dto -> {
+                    dto.setUser(null);
+                    dto.setSupplier(null);
+                })
                 .toList();
-        transactionDTOS.forEach(transactionDTOItem -> {
-            transactionDTOItem.setUser(null);
-            transactionDTOItem.setSupplier(null);
-        });
+
         return Response.builder()
                 .status(200)
                 .message("Success")
+                .totalPages(transactionPage.getTotalPages())
                 .transactions(transactionDTOS)
                 .build();
     }
