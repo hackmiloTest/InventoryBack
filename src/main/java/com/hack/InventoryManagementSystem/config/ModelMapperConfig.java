@@ -8,10 +8,12 @@ import com.hack.InventoryManagementSystem.entity.Product;
 import com.hack.InventoryManagementSystem.entity.Supplier;
 import com.hack.InventoryManagementSystem.entity.Transaction;
 import com.hack.InventoryManagementSystem.entity.User;
+import com.hack.InventoryManagementSystem.enums.TransactionType;
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 import org.modelmapper.convention.MatchingStrategies;
+import org.modelmapper.spi.MappingContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,11 +29,19 @@ public class ModelMapperConfig {
                 .setFieldAccessLevel(org.modelmapper.config.Configuration.AccessLevel.PRIVATE)
                 .setMatchingStrategy(MatchingStrategies.STANDARD);
 
-        // Converter para Product
+        // Conversores para otros objetos
         Converter<Product, ProductDTO> productConverter = ctx -> modelMapper.map(ctx.getSource(), ProductDTO.class);
         Converter<User, UserDTO> userConverter = ctx -> modelMapper.map(ctx.getSource(), UserDTO.class);
         Converter<Supplier, SupplierDTO> supplierConverter = ctx -> modelMapper.map(ctx.getSource(), SupplierDTO.class);
 
+        // Conversor para TransactionType (String a Enum)
+        modelMapper.addConverter(new Converter<String, TransactionType>() {
+            public TransactionType convert(MappingContext<String, TransactionType> context) {
+                return TransactionType.valueOf(context.getSource().toUpperCase());
+            }
+        });
+
+        // Mapeo de transacciones
         modelMapper.addMappings(new PropertyMap<Transaction, TransactionDTO>() {
             @Override
             protected void configure() {
@@ -43,5 +53,6 @@ public class ModelMapperConfig {
 
         return modelMapper;
     }
+
 
 }
