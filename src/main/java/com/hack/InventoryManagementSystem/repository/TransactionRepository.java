@@ -1,6 +1,7 @@
 package com.hack.InventoryManagementSystem.repository;
 
 import com.hack.InventoryManagementSystem.entity.Transaction;
+import com.hack.InventoryManagementSystem.enums.TransactionType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,7 +32,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             "OR LOWER(t.product.name) LIKE LOWER(CONCAT('%', :searchText, '%'))) " +
             "AND (:transactionType IS NULL OR t.transactionType = :transactionType)")
     Page<Transaction> searchTransactionsWithType(@Param("searchText") String searchText,
-                                                 @Param("transactionType") String transactionType,
+                                                 @Param("transactionType") TransactionType transactionType,
                                                  Pageable pageable);
 
 

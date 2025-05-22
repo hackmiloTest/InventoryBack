@@ -3,6 +3,7 @@ package com.hack.InventoryManagementSystem.services;
 import com.hack.InventoryManagementSystem.dto.Response;
 import com.hack.InventoryManagementSystem.dto.TransactionsRequest;
 import com.hack.InventoryManagementSystem.enums.TransactionStatus;
+import com.hack.InventoryManagementSystem.enums.TransactionType;
 
 public interface TransactionService {
     Response restockInventory(TransactionsRequest transactionsRequest);
@@ -11,7 +12,7 @@ public interface TransactionService {
 
     Response returnToSupplier(TransactionsRequest transactionsRequest);
 
-    Response getAllTransactions(int page, int size, String searchText, String transactionType);
+    Response getAllTransactions(int page, int size, String searchText, TransactionType transactionType);
 
     Response getTransactionsById(Long id);
 

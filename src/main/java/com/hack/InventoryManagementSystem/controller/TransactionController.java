@@ -3,6 +3,7 @@ package com.hack.InventoryManagementSystem.controller;
 import com.hack.InventoryManagementSystem.dto.Response;
 import com.hack.InventoryManagementSystem.dto.TransactionsRequest;
 import com.hack.InventoryManagementSystem.enums.TransactionStatus;
+import com.hack.InventoryManagementSystem.enums.TransactionType;
 import com.hack.InventoryManagementSystem.services.TransactionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +37,7 @@ public class TransactionController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "1000") int size,
             @RequestParam(required = false, defaultValue = "") String searchText,
-            @RequestParam(required = false, defaultValue = "") String transactionType
-
+            @RequestParam(required = false) TransactionType transactionType
     ) {
         return ResponseEntity.ok(transactionService.getAllTransactions(page, size, searchText, transactionType));
     }
